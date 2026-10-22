@@ -6,6 +6,7 @@ use App\Models\Merchant;
 use App\Models\Payment;
 use App\Models\PaymentLink;
 use App\Services\PaymentService;
+use App\Support\QrCode;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
@@ -79,8 +80,27 @@ class CheckoutTest extends TestCase
         $this->get(route('checkout.show', $payment))
             ->assertOk()
             ->assertSee('Send exactly')
-            ->assertSee('0.0001207515 BTC')
-            ->assertSee('bc1qexampleaddress');
+            ->assertSeeText('0.0001207515 BTC')
+            ->assertSee('data-copy="bc1qexampleaddress"', false)
+            // Our own QR of the plain address, not OxaPay's payment-URI image (exchanges reject "bitcoin:...?amount=").
+            ->assertSee('<svg xmlns="http://www.w3.org/2000/svg"', false)
+            ->assertDontSee('api.qrserver.com')
+            ->assertDontSee('bitcoin:bc1qexampleaddress')
+            ->assertSee('Address only. Enter the amount yourself.')
+            ->assertSee('withdrawal fee comes on top');
+    }
+
+    public function test_qr_codes_contain_only_the_plain_address(): void
+    {
+        $svg = QrCode::svg('TXpPgM21WxFxjGhwH1evjuSPFH4SEdgqwo');
+
+        $this->assertStringStartsWith('<svg', $svg);
+        $this->assertStringNotContainsString('<?xml', $svg);
+        $this->assertStringNotContainsString('tron:', $svg);
+
+        // Same text in, same QR out; different text, different QR.
+        $this->assertSame($svg, QrCode::svg('TXpPgM21WxFxjGhwH1evjuSPFH4SEdgqwo'));
+        $this->assertNotSame($svg, QrCode::svg('TQ7m2wYourTronAddressHere123456789'));
     }
 
     public function test_paying_in_usdt_is_not_converted(): void

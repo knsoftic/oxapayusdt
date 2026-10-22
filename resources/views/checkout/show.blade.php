@@ -114,14 +114,18 @@
             @else
                 <div class="send-label">Send exactly</div>
                 <div class="send-amount">
-                    <strong>{{ $payment->pay_amount }} {{ $payment->pay_currency }}</strong>
+                    <strong><span class="selectable">{{ $payment->pay_amount }}</span> {{ $payment->pay_currency }}</strong>
                     <button type="button" class="copy" data-copy="{{ $payment->pay_amount }}">Copy</button>
                 </div>
                 <div class="send-sub">≈ {{ $amountLabel }}</div>
 
                 <div class="pay-body">
-                    @if ($payment->qr_code)
-                        <div class="qr"><img src="{{ $payment->qr_code }}" alt="QR code for the {{ $payment->pay_currency }} payment address" width="156" height="156"></div>
+                    @if ($payment->address)
+                        {{-- The QR holds only the plain address: exchanges reject payment URIs such as "tron:...?amount=...&token=...". --}}
+                        <figure class="qr-wrap">
+                            <div class="qr" role="img" aria-label="QR code of the {{ $payment->pay_currency }} address">{!! \App\Support\QrCode::svg($payment->address) !!}</div>
+                            <figcaption>Address only. Enter the amount yourself.</figcaption>
+                        </figure>
                     @endif
 
                     <div class="pay-fields">
@@ -133,7 +137,7 @@
                         <div class="kv">
                             <div class="kv-label">{{ $payment->pay_currency }} address</div>
                             <div class="mono-box">
-                                <code>{{ $payment->address }}</code>
+                                <code class="selectable">{{ $payment->address }}</code>
                                 <button type="button" class="copy" data-copy="{{ $payment->address }}">Copy</button>
                             </div>
                         </div>
@@ -142,7 +146,7 @@
                             <div class="kv">
                                 <div class="kv-label">Memo / tag (required)</div>
                                 <div class="mono-box">
-                                    <code>{{ $payment->memo }}</code>
+                                    <code class="selectable">{{ $payment->memo }}</code>
                                     <button type="button" class="copy" data-copy="{{ $payment->memo }}">Copy</button>
                                 </div>
                             </div>
@@ -152,7 +156,11 @@
 
                 <div class="note">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
-                    <span>Send only <strong>{{ $payment->pay_currency }}</strong> on <strong>{{ $payment->network }}</strong>. Other coins, other networks, or payments after the timer ends can be lost.</span>
+                    <span>Send only <strong>{{ $payment->pay_currency }}</strong> on <strong>{{ $payment->network }}</strong>. In your exchange or wallet, pick the same network. Other coins, other networks, or payments after the timer ends can be lost.</span>
+                </div>
+                <div class="note">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+                    <span>Paying from an exchange? Its withdrawal fee comes on top: make sure <strong>{{ $payment->pay_amount }} {{ $payment->pay_currency }}</strong> arrives, or the payment will be short.</span>
                 </div>
                 @if ($payment->memo)
                     <div class="note">

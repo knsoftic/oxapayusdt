@@ -223,8 +223,12 @@ body {
 
 .pay-body { display: grid; grid-template-columns: 176px minmax(0, 1fr); gap: 22px; align-items: start; margin: 22px 0; }
 @media (max-width: 500px) { .pay-body { grid-template-columns: minmax(0, 1fr); justify-items: center; } .pay-body > .pay-fields { width: 100%; } }
-.qr { width: 176px; height: 176px; padding: 10px; border-radius: 14px; background: #fff; border: 1px solid var(--border); }
-.qr img { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+.qr-wrap { margin: 0; display: grid; gap: 6px; justify-items: center; }
+.qr-wrap figcaption { max-width: 176px; text-align: center; font-size: 11.5px; color: var(--muted); }
+/* Always black on white, even in dark mode: scanners need the contrast. */
+.qr { width: 176px; height: 176px; padding: 8px; border-radius: 14px; background: #fff; border: 1px solid var(--border); }
+.qr svg { width: 100%; height: 100%; display: block; shape-rendering: crispEdges; }
+.selectable { user-select: all; -webkit-user-select: all; }
 
 .kv { margin-bottom: 14px; }
 .kv:last-child { margin-bottom: 0; }
