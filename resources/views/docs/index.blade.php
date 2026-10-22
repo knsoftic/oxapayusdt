@@ -26,7 +26,7 @@
             @auth
                 <a href="{{ auth()->user()->homeRoute() }}" class="btn btn-sm">Dashboard</a>
             @else
-                <a href="{{ route('register') }}" class="btn btn-sm">Get API keys</a>
+                <a href="{{ route('login') }}" class="btn btn-sm">Log in</a>
             @endauth
         </div>
     </header>
@@ -67,7 +67,7 @@
             <section id="quick-start">
                 <h2>Quick start</h2>
                 <ol>
-                    <li><a href="{{ route('register') }}">Create a merchant account</a>, open <strong>Developers</strong> and create a <strong>test key</strong> (<code>sk_test_...</code>).</li>
+                    <li>Get your merchant account from the {{ $platform }} team, <a href="{{ route('login') }}">log in</a>, open <strong>Developers</strong> and create a <strong>test key</strong> (<code>sk_test_...</code>).</li>
                     <li>Create a payment from your server:</li>
                 </ol>
                 @verbatim
@@ -109,7 +109,7 @@
             <section id="fees">
                 <h2>Fees and balance</h2>
                 <p>Each payment has a pay-in fee (default: {{ rtrim(rtrim(number_format(config('platform.fees.payin_percent'), 2), '0'), '.') }}% + {{ usd(config('platform.fees.payin_fixed')) }}). It is fixed when the payment is created and returned as <code>fee</code> and <code>net_amount</code>. When the payment is paid, the <code>net_amount</code> is added to your balance.</p>
-                <p>Each withdrawal has a fixed payout fee (default {{ usd(config('platform.fees.payout_fixed')) }}), taken from the withdrawal amount.</p>
+                <p>Each withdrawal has a payout fee (default {{ \App\Models\Merchant::feeLabel(config('platform.fees.payout_percent'), config('platform.fees.payout_fixed')) }}), taken from the withdrawal amount. Both fees are a percentage plus a fixed amount; <code>GET /balance</code> returns the exact fees for your account.</p>
                 <table class="params">
                     <tr><td>Customer pays</td><td>$10.00</td></tr>
                     <tr><td>Pay-in fee</td><td>− {{ usd(config('platform.fees.payin_fixed') + 10 * config('platform.fees.payin_percent') / 100) }}</td></tr>
@@ -196,8 +196,12 @@
   "currency": "USD",
   "available": "1240.50",
   "pending_payouts": "100.00",
-  "payin_fee": "$0.50",
-  "payout_fee": "1.00"
+  "fees": {
+    "payin_percent": "1.00",
+    "payin_fixed": "0.50",
+    "payout_percent": "0.00",
+    "payout_fixed": "1.00"
+  }
 }</pre>
                 @endverbatim
             </section>

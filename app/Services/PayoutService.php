@@ -32,7 +32,7 @@ class PayoutService
     public function request(Merchant $merchant, string $mode, array $data): Payout
     {
         $amount = Money::cents($data['amount']);
-        $fee = Money::cents($merchant->payoutFee());
+        $fee = Money::cents($merchant->payoutFeeFor(Money::format($amount)));
         $minimum = Money::cents(config('platform.min_payout'));
 
         if ($amount < $minimum) {

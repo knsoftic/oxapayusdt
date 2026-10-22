@@ -24,6 +24,7 @@ abstract class TestCase extends BaseTestCase
             'oxapay.checkout' => 'custom',
             'platform.fees.payin_percent' => 1.0,
             'platform.fees.payin_fixed' => 0.50,
+            'platform.fees.payout_percent' => 0.0,
             'platform.fees.payout_fixed' => 1.00,
             'platform.min_payment' => 1.0,
             'platform.min_payout' => 5.0,

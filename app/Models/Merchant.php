@@ -29,6 +29,7 @@ class Merchant extends Model
         'live_requested_at',
         'fee_payin_percent',
         'fee_payin_fixed',
+        'fee_payout_percent',
         'fee_payout_fixed',
         'webhook_url',
         'webhook_secret',
@@ -43,6 +44,7 @@ class Merchant extends Model
             'live_requested_at' => 'datetime',
             'fee_payin_percent' => 'decimal:2',
             'fee_payin_fixed' => 'decimal:2',
+            'fee_payout_percent' => 'decimal:2',
             'fee_payout_fixed' => 'decimal:2',
             'live_balance' => 'decimal:2',
             'test_balance' => 'decimal:2',
@@ -117,9 +119,14 @@ class Merchant extends Model
         return (float) ($this->fee_payin_fixed ?? config('platform.fees.payin_fixed'));
     }
 
-    public function payoutFee(): string
+    public function payoutFeePercent(): float
     {
-        return Money::format(Money::cents($this->fee_payout_fixed ?? config('platform.fees.payout_fixed')));
+        return (float) ($this->fee_payout_percent ?? config('platform.fees.payout_percent'));
+    }
+
+    public function payoutFeeFixed(): float
+    {
+        return (float) ($this->fee_payout_fixed ?? config('platform.fees.payout_fixed'));
     }
 
     /**
@@ -127,10 +134,15 @@ class Merchant extends Model
      */
     public function payinFeeFor(int|float|string $amount): string
     {
-        $cents = Money::cents($amount);
-        $fee = (int) round($cents * $this->payinFeePercent() / 100) + Money::cents($this->payinFeeFixed());
+        return self::feeFor($amount, $this->payinFeePercent(), $this->payinFeeFixed());
+    }
 
-        return Money::format(min($fee, $cents));
+    /**
+     * Payout fee for a withdrawal amount, never more than the amount itself.
+     */
+    public function payoutFeeFor(int|float|string $amount): string
+    {
+        return self::feeFor($amount, $this->payoutFeePercent(), $this->payoutFeeFixed());
     }
 
     /**
@@ -138,14 +150,32 @@ class Merchant extends Model
      */
     public function payinFeeLabel(): string
     {
+        return self::feeLabel($this->payinFeePercent(), $this->payinFeeFixed());
+    }
+
+    public function payoutFeeLabel(): string
+    {
+        return self::feeLabel($this->payoutFeePercent(), $this->payoutFeeFixed());
+    }
+
+    public static function feeFor(int|float|string $amount, float $percent, float $fixed): string
+    {
+        $cents = Money::cents($amount);
+        $fee = (int) round($cents * $percent / 100) + Money::cents($fixed);
+
+        return Money::format(min($fee, $cents));
+    }
+
+    public static function feeLabel(float $percent, float $fixed): string
+    {
         $parts = [];
 
-        if ($this->payinFeePercent() > 0) {
-            $parts[] = rtrim(rtrim(number_format($this->payinFeePercent(), 2), '0'), '.').'%';
+        if ($percent > 0) {
+            $parts[] = rtrim(rtrim(number_format($percent, 2), '0'), '.').'%';
         }
 
-        if ($this->payinFeeFixed() > 0 || ! $parts) {
-            $parts[] = Money::usd($this->payinFeeFixed());
+        if ($fixed > 0 || ! $parts) {
+            $parts[] = Money::usd($fixed);
         }
 
         return implode(' + ', $parts);

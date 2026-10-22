@@ -23,9 +23,19 @@ class LedgerTest extends TestCase
         $this->assertSame('1.50', $merchant->payinFeeFor('100'));
         $this->assertSame('1% + $0.50', $merchant->payinFeeLabel());
 
-        $merchant->update(['fee_payin_percent' => 0, 'fee_payin_fixed' => 0.25, 'fee_payout_fixed' => 2]);
+        // Payout default: $1.00 fixed, no percentage.
+        $this->assertSame('1.00', $merchant->payoutFeeFor('50'));
+        $this->assertSame('$1.00', $merchant->payoutFeeLabel());
+
+        $merchant->update(['fee_payin_percent' => 0, 'fee_payin_fixed' => 0.25, 'fee_payout_percent' => 2, 'fee_payout_fixed' => 2]);
         $this->assertSame('0.25', $merchant->payinFeeFor('10.00'));
-        $this->assertSame('2.00', $merchant->payoutFee());
+        $this->assertSame('3.00', $merchant->payoutFeeFor('50')); // 2% of 50 + 2.00
+        $this->assertSame('2% + $2.00', $merchant->payoutFeeLabel());
+
+        // A platform default of 1.5% payout applies to merchants without an override.
+        config(['platform.fees.payout_percent' => 1.5]);
+        $default = Merchant::factory()->create();
+        $this->assertSame('2.50', $default->payoutFeeFor('100')); // 1.5% of 100 + 1.00
 
         // The fee never exceeds the amount.
         $merchant->update(['fee_payin_fixed' => 5]);

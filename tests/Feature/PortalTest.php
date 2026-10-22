@@ -111,12 +111,13 @@ class PortalTest extends TestCase
         $this->get('/admin/settings')->assertOk();
 
         $this->post(route('admin.merchants.live', $merchant))->assertSessionHas('status');
-        $this->put(route('admin.merchants.fees', $merchant), ['fee_payin_percent' => '2', 'fee_payin_fixed' => '', 'fee_payout_fixed' => '0.5']);
+        $this->put(route('admin.merchants.fees', $merchant), ['fee_payin_percent' => '2', 'fee_payin_fixed' => '', 'fee_payout_percent' => '1', 'fee_payout_fixed' => '0.5']);
         $this->post(route('admin.merchants.status', $merchant));
 
         $merchant->refresh();
         $this->assertTrue($merchant->live_enabled);
-        $this->assertSame(['2.00', null, '0.50'], [$merchant->fee_payin_percent, $merchant->fee_payin_fixed, $merchant->fee_payout_fixed]);
+        $this->assertSame(['2.00', null, '1.00', '0.50'], [$merchant->fee_payin_percent, $merchant->fee_payin_fixed, $merchant->fee_payout_percent, $merchant->fee_payout_fixed]);
+        $this->assertSame('1% + $0.50', $merchant->payoutFeeLabel());
         $this->assertSame(Merchant::STATUS_SUSPENDED, $merchant->status);
     }
 
@@ -132,6 +133,7 @@ class PortalTest extends TestCase
             'brand_color' => '#0EA5E9',
             'payin_percent' => '1.5',
             'payin_fixed' => '0.3',
+            'payout_percent' => '0.75',
             'payout_fixed' => '2',
             'min_payment' => '2',
             'min_payout' => '10',
@@ -145,8 +147,8 @@ class PortalTest extends TestCase
         $this->assertSame('MERCHANT-KEY-1234567890-WXYZ', config('oxapay.merchant_api_key'));
         $this->assertSame('test-payout-key', config('oxapay.payout_api_key')); // blank keeps the existing key
         // Numbers round-trip through JSON, so 2.0 may come back as 2: compare loosely.
-        $this->assertEquals([1.5, 0.3, 2, 'hosted', 'QadriPay', '#0ea5e9'], [
-            config('platform.fees.payin_percent'), config('platform.fees.payin_fixed'), config('platform.fees.payout_fixed'),
+        $this->assertEquals([1.5, 0.3, 0.75, 2, 'hosted', 'QadriPay', '#0ea5e9'], [
+            config('platform.fees.payin_percent'), config('platform.fees.payin_fixed'), config('platform.fees.payout_percent'), config('platform.fees.payout_fixed'),
             config('oxapay.checkout'), config('platform.name'), config('platform.brand_color'),
         ]);
 

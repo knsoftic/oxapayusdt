@@ -54,9 +54,16 @@
                     </div>
                     <div class="form-row">
                         <div class="field">
+                            <label for="payout_percent">Payout %</label>
+                            <input class="input" id="payout_percent" name="payout_percent" type="number" step="0.01" min="0" max="50" value="{{ old('payout_percent', config('platform.fees.payout_percent')) }}" required>
+                        </div>
+                        <div class="field">
                             <label for="payout_fixed">Payout fixed $</label>
                             <input class="input" id="payout_fixed" name="payout_fixed" type="number" step="0.01" min="0" value="{{ old('payout_fixed', config('platform.fees.payout_fixed')) }}" required>
                         </div>
+                    </div>
+                    <p class="small muted mt-0">Fee = amount × % + fixed. Example with these defaults: a {{ usd(100) }} payment pays {{ usd(\App\Models\Merchant::feeFor(100, config('platform.fees.payin_percent'), config('platform.fees.payin_fixed'))) }}, a {{ usd(100) }} withdrawal pays {{ usd(\App\Models\Merchant::feeFor(100, config('platform.fees.payout_percent'), config('platform.fees.payout_fixed'))) }}.</p>
+                    <div class="form-row">
                         <div class="field">
                             <label for="min_payment">Minimum payment $</label>
                             <input class="input" id="min_payment" name="min_payment" type="number" step="0.01" min="0.5" value="{{ old('min_payment', config('platform.min_payment')) }}" required>

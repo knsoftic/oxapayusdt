@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\Merchant;
 use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
-use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
@@ -34,46 +33,76 @@ class AuthTest extends TestCase
         $this->assertDatabaseCount('users', 1);
     }
 
-    public function test_merchants_can_register_and_land_on_their_dashboard(): void
+    public function test_nobody_can_sign_up_themselves(): void
     {
-        Notification::fake();
         $this->admin();
 
+        $this->get('/register')->assertNotFound();
         $this->post('/register', [
-            'name' => 'Ali',
-            'business_name' => 'Ali Electronics',
-            'email' => 'ali@example.com',
-            'password' => 'secret-password',
-            'password_confirmation' => 'secret-password',
-            'terms' => '1',
-        ])->assertRedirect('/dashboard');
+            'name' => 'Ali', 'business_name' => 'Ali Electronics', 'email' => 'ali@example.com',
+            'password' => 'secret-password', 'password_confirmation' => 'secret-password', 'terms' => '1',
+        ])->assertNotFound();
 
-        $user = User::where('email', 'ali@example.com')->sole();
-        $this->assertTrue($user->isMerchant());
-        $this->assertSame('Ali Electronics', $user->merchant->business_name);
-        $this->assertFalse($user->merchant->live_enabled);
-        $this->assertStringStartsWith('whsec_', $user->merchant->webhook_secret);
-        $this->assertAuthenticatedAs($user);
-        Notification::assertSentTo($user, VerifyEmail::class);
-
-        $this->get('/dashboard')->assertOk()->assertSee('Ali Electronics')->assertSee('Test mode');
+        $this->get('/login')->assertDontSee('/register');
+        $this->assertDatabaseCount('users', 1);
     }
 
-    public function test_registration_cannot_make_someone_an_admin(): void
+    public function test_admin_creates_a_merchant_who_can_then_log_in(): void
     {
-        $this->admin();
+        Notification::fake();
+        $this->actingAs($this->admin());
 
-        $this->post('/register', [
-            'name' => 'Sneaky',
-            'business_name' => 'Sneaky Co',
-            'email' => 'sneaky@example.com',
-            'password' => 'secret-password',
-            'password_confirmation' => 'secret-password',
-            'terms' => '1',
-            'role' => 'admin',
-        ]);
+        $this->get('/admin/merchants/create')->assertOk()->assertSee('Add merchant');
 
-        $this->assertTrue(User::where('email', 'sneaky@example.com')->sole()->isMerchant());
+        $this->post('/admin/merchants', [
+            'name' => 'Ali',
+            'email' => 'ali@example.com',
+            'password' => 'given-by-admin-1',
+            'business_name' => 'Ali Electronics',
+            'live_enabled' => '1',
+            'fee_payin_percent' => '1.5',
+            'fee_payin_fixed' => '',
+            'fee_payout_percent' => '0.5',
+            'fee_payout_fixed' => '2',
+            'role' => 'admin', // ignored: only merchants are created here
+        ])->assertRedirect();
+
+        $user = User::where('email', 'ali@example.com')->sole();
+        $merchant = $user->merchant;
+        $this->assertTrue($user->isMerchant());
+        $this->assertTrue($user->hasVerifiedEmail());
+        $this->assertTrue($merchant->live_enabled);
+        $this->assertSame(['1.50', null, '0.50', '2.00'], [$merchant->fee_payin_percent, $merchant->fee_payin_fixed, $merchant->fee_payout_percent, $merchant->fee_payout_fixed]);
+        $this->assertStringStartsWith('whsec_', $merchant->webhook_secret);
+        Notification::assertNothingSent();
+
+        $this->post('/admin/merchants', ['name' => 'X', 'email' => 'ali@example.com', 'password' => 'given-by-admin-1', 'business_name' => 'Dup'])
+            ->assertSessionHasErrors('email');
+
+        $this->post('/logout');
+        $this->post('/login', ['email' => 'ali@example.com', 'password' => 'given-by-admin-1'])->assertRedirect(route('dashboard'));
+        $this->get('/dashboard')->assertOk()->assertSee('Ali Electronics')->assertDontSee('Please verify your email');
+        $this->get('/admin/merchants/create')->assertRedirect(route('dashboard'));
+    }
+
+    public function test_admin_can_change_a_merchants_login_details(): void
+    {
+        $merchant = Merchant::factory()->create();
+        $this->actingAs($this->admin());
+
+        $this->put(route('admin.merchants.account', $merchant), [
+            'name' => 'New Contact', 'email' => 'new@example.com', 'business_name' => 'Renamed Co', 'password' => '',
+        ])->assertSessionHas('status', 'Login details saved.');
+
+        $this->put(route('admin.merchants.account', $merchant), [
+            'name' => 'New Contact', 'email' => 'new@example.com', 'business_name' => 'Renamed Co', 'password' => 'reset-by-admin-9',
+        ])->assertSessionHas('status', 'Login details saved, including the new password.');
+
+        $merchant->refresh();
+        $this->assertSame(['New Contact', 'new@example.com', 'Renamed Co'], [$merchant->user->name, $merchant->user->email, $merchant->business_name]);
+
+        $this->post('/logout');
+        $this->post('/login', ['email' => 'new@example.com', 'password' => 'reset-by-admin-9'])->assertRedirect(route('dashboard'));
     }
 
     public function test_login_sends_each_role_to_its_own_area(): void

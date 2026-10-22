@@ -28,5 +28,5 @@
 @endsection
 
 @section('footer')
-    New here? <a href="{{ route('register') }}">Create a merchant account</a>
+    Need an account? Contact the {{ config('platform.name') }} team.
 @endsection

@@ -131,6 +131,15 @@
             setTimeout(() => { button.textContent = label; button.classList.remove('copied'); }, 1500);
         });
 
+        // Password generators: <button data-generate="input-id">Generate</button>
+        document.addEventListener('click', (event) => {
+            const button = event.target.closest('[data-generate]');
+            if (!button) return;
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+            const bytes = crypto.getRandomValues(new Uint32Array(14));
+            document.getElementById(button.dataset.generate).value = Array.from(bytes, (b) => chars[b % chars.length]).join('');
+        });
+
         document.getElementById('shell').addEventListener('click', (event) => {
             if (event.target.id === 'shell') event.currentTarget.classList.remove('nav-open');
         });

@@ -18,7 +18,6 @@ class PayoutController extends MerchantController
 
         return view('merchant.payouts', [
             'balance' => $merchant->balance($this->mode()),
-            'fee' => $merchant->payoutFee(),
             'networks' => config('platform.payout_networks'),
             'payouts' => Payout::forMerchant($merchant, $this->mode())->latest('id')->paginate(15),
         ]);

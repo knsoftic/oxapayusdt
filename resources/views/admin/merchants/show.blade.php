@@ -36,21 +36,7 @@
                 <form method="POST" action="{{ route('admin.merchants.fees', $merchant) }}" class="form">
                     @csrf
                     @method('PUT')
-                    <div class="form-row">
-                        <div class="field">
-                            <label for="fee_payin_percent">Pay-in %</label>
-                            <input class="input" id="fee_payin_percent" name="fee_payin_percent" type="number" step="0.01" min="0" value="{{ old('fee_payin_percent', $merchant->fee_payin_percent) }}" placeholder="{{ config('platform.fees.payin_percent') }} (default)">
-                        </div>
-                        <div class="field">
-                            <label for="fee_payin_fixed">Pay-in fixed $</label>
-                            <input class="input" id="fee_payin_fixed" name="fee_payin_fixed" type="number" step="0.01" min="0" value="{{ old('fee_payin_fixed', $merchant->fee_payin_fixed) }}" placeholder="{{ config('platform.fees.payin_fixed') }} (default)">
-                        </div>
-                        <div class="field">
-                            <label for="fee_payout_fixed">Payout fixed $</label>
-                            <input class="input" id="fee_payout_fixed" name="fee_payout_fixed" type="number" step="0.01" min="0" value="{{ old('fee_payout_fixed', $merchant->fee_payout_fixed) }}" placeholder="{{ config('platform.fees.payout_fixed') }} (default)">
-                        </div>
-                    </div>
-                    <p class="small muted mt-0">Leave a field empty to use the platform default. Now: {{ $merchant->payinFeeLabel() }} per payment, {{ usd($merchant->payoutFee()) }} per withdrawal.</p>
+                    @include('admin.merchants._fee_fields', ['merchant' => $merchant])
                     <div><button type="submit" class="btn">Save fees</button></div>
                 </form>
             </div>
@@ -88,6 +74,38 @@
                     <div><button type="submit" class="btn btn-secondary">Apply adjustment</button></div>
                 </form>
             </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-head"><h2>Login details</h2><span class="sub">The merchant logs in at {{ route('login') }}</span></div>
+        <div class="card-body">
+            <form method="POST" action="{{ route('admin.merchants.account', $merchant) }}" class="form">
+                @csrf
+                @method('PUT')
+                <div class="form-row">
+                    <div class="field">
+                        <label for="acc_name">Contact name</label>
+                        <input class="input" id="acc_name" name="name" value="{{ old('name', $merchant->user->name) }}" required maxlength="255">
+                    </div>
+                    <div class="field">
+                        <label for="acc_email">Login email</label>
+                        <input class="input" id="acc_email" name="email" type="email" value="{{ old('email', $merchant->user->email) }}" required>
+                    </div>
+                    <div class="field">
+                        <label for="acc_business">Business name</label>
+                        <input class="input" id="acc_business" name="business_name" value="{{ old('business_name', $merchant->business_name) }}" required maxlength="120">
+                    </div>
+                    <div class="field">
+                        <label for="acc_password">New password <span class="muted">(optional)</span></label>
+                        <div class="input-group">
+                            <input class="input" id="acc_password" name="password" type="text" autocomplete="new-password" spellcheck="false" placeholder="Leave empty to keep">
+                            <button type="button" class="btn btn-secondary" data-generate="acc_password">Generate</button>
+                        </div>
+                    </div>
+                </div>
+                <div><button type="submit" class="btn btn-secondary">Save login details</button></div>
+            </form>
         </div>
     </div>
 

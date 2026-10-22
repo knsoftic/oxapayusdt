@@ -22,7 +22,7 @@
         <div class="card stat">
             <div class="stat-label">Fees</div>
             <div class="stat-value">{{ usd($fees) }}</div>
-            <div class="stat-note">Pay-in {{ $merchant->payinFeeLabel() }} · payout {{ usd($merchant->payoutFee()) }}</div>
+            <div class="stat-note">Pay-in {{ $merchant->payinFeeLabel() }} · payout {{ $merchant->payoutFeeLabel() }}</div>
         </div>
         <div class="card stat">
             <div class="stat-label">Withdrawn</div>

@@ -28,8 +28,12 @@ class BalanceController extends Controller
             'currency' => 'USD',
             'available' => $merchant->balance($mode),
             'pending_payouts' => Money::format(Money::cents($pending)),
-            'payin_fee' => $merchant->payinFeeLabel(),
-            'payout_fee' => $merchant->payoutFee(),
+            'fees' => [
+                'payin_percent' => number_format($merchant->payinFeePercent(), 2, '.', ''),
+                'payin_fixed' => number_format($merchant->payinFeeFixed(), 2, '.', ''),
+                'payout_percent' => number_format($merchant->payoutFeePercent(), 2, '.', ''),
+                'payout_fixed' => number_format($merchant->payoutFeeFixed(), 2, '.', ''),
+            ],
         ]);
     }
 }

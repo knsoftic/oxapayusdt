@@ -36,6 +36,7 @@ class SettingsController extends Controller
             'brand_color' => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'payin_percent' => ['required', 'numeric', 'min:0', 'max:50'],
             'payin_fixed' => ['required', 'numeric', 'min:0', 'max:1000'],
+            'payout_percent' => ['required', 'numeric', 'min:0', 'max:50'],
             'payout_fixed' => ['required', 'numeric', 'min:0', 'max:1000'],
             'min_payment' => ['required', 'numeric', 'min:0.5', 'max:100000'],
             'min_payout' => ['required', 'numeric', 'min:1', 'max:100000'],
@@ -58,6 +59,7 @@ class SettingsController extends Controller
         Setting::put('platform.brand_color', strtolower($data['brand_color']));
         Setting::put('platform.fees.payin_percent', (float) $data['payin_percent']);
         Setting::put('platform.fees.payin_fixed', (float) $data['payin_fixed']);
+        Setting::put('platform.fees.payout_percent', (float) $data['payout_percent']);
         Setting::put('platform.fees.payout_fixed', (float) $data['payout_fixed']);
         Setting::put('platform.min_payment', (float) $data['min_payment']);
         Setting::put('platform.min_payout', (float) $data['min_payout']);

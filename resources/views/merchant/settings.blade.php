@@ -64,7 +64,7 @@
                 <div class="card-body">
                     <dl class="dl">
                         <dt>Per payment</dt><dd>{{ $merchant->payinFeeLabel() }}</dd>
-                        <dt>Per withdrawal</dt><dd>{{ usd($merchant->payoutFee()) }}</dd>
+                        <dt>Per withdrawal</dt><dd>{{ $merchant->payoutFeeLabel() }}</dd>
                         <dt>Example</dt><dd>A {{ usd(10) }} payment adds {{ usd(10 - (float) $merchant->payinFeeFor(10)) }} to your balance</dd>
                     </dl>
                 </div>

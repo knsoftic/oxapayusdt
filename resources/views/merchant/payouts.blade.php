@@ -55,7 +55,7 @@
                     <x-icon name="wallet" />
                     <div>
                         <p><strong>{{ usd($balance) }}</strong> available</p>
-                        <p class="small">Fee {{ usd($fee) }} per withdrawal · minimum {{ usd(config('platform.min_payout')) }}</p>
+                        <p class="small">Fee {{ $merchant->payoutFeeLabel() }} per withdrawal · minimum {{ usd(config('platform.min_payout')) }}</p>
                     </div>
                 </div>
 
@@ -67,7 +67,7 @@
                             <input class="input" id="amount" name="amount" type="number" step="0.01" min="0.01" value="{{ old('amount') }}" required>
                             <button type="button" class="btn btn-secondary" onclick="document.getElementById('amount').value='{{ $balance }}'; document.getElementById('amount').dispatchEvent(new Event('input'))">Max</button>
                         </div>
-                        <div class="hint" id="receive-hint">You receive the amount minus the {{ usd($fee) }} fee.</div>
+                        <div class="hint" id="receive-hint">You receive the amount minus the {{ $merchant->payoutFeeLabel() }} fee.</div>
                     </div>
                     <div class="field">
                         <label for="network">Network</label>
@@ -103,12 +103,14 @@
         (() => {
             const amount = document.getElementById('amount');
             const hint = document.getElementById('receive-hint');
-            const fee = {{ (float) $fee }};
+            const percent = {{ $merchant->payoutFeePercent() }}, fixed = {{ $merchant->payoutFeeFixed() }}, label = @json($merchant->payoutFeeLabel());
             amount.addEventListener('input', () => {
                 const value = parseFloat(amount.value);
+                // Same rule as the server: amount x % + fixed, in cents.
+                const fee = isNaN(value) ? 0 : Math.round(value * percent + fixed * 100) / 100;
                 hint.textContent = value > fee
                     ? `You receive ${(value - fee).toFixed(2)} {{ config('platform.payout_currency') }} after the $${fee.toFixed(2)} fee.`
-                    : 'You receive the amount minus the $' + fee.toFixed(2) + ' fee.';
+                    : `You receive the amount minus the ${label} fee.`;
             });
         })();
     </script>

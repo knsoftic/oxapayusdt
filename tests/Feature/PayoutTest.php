@@ -45,6 +45,22 @@ class PayoutTest extends TestCase
         $this->get(route('payouts.index'))->assertOk()->assertSee('29.00 USDT');
     }
 
+    public function test_payout_fee_can_be_a_percentage_plus_a_fixed_amount(): void
+    {
+        $merchant = Merchant::factory()->create(['fee_payout_percent' => 2, 'fee_payout_fixed' => 0.5]);
+        $merchant->forceFill(['test_balance' => '100.00'])->save();
+
+        $payout = app(PayoutService::class)->request($merchant, 'test', [
+            'amount' => '50', 'network' => 'Tron', 'address' => 'TQ7m2wYourTronAddressHere123456789',
+        ]);
+
+        // 2% of 50 = 1.00, plus 0.50 fixed.
+        $this->assertSame(['50.00', '1.50', '48.50'], [$payout->amount, $payout->fee, $payout->net_amount]);
+        $this->assertSame('50.00', $merchant->fresh()->test_balance);
+
+        $this->actingAs($merchant->user)->get(route('payouts.index'))->assertOk()->assertSee('2% + $0.50');
+    }
+
     public function test_admin_sends_a_payout_through_oxapay_once(): void
     {
         $payout = $this->livePayout();

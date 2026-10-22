@@ -23,13 +23,15 @@ return [
     |
     | Default fees for every merchant; each merchant can get its own override.
     | Pay-in fee = amount x payin_percent / 100 + payin_fixed, taken from each
-    | paid payment. Payout fee is a fixed amount taken from each withdrawal.
+    | paid payment. Payout fee = amount x payout_percent / 100 + payout_fixed,
+    | taken from each withdrawal.
     |
     */
 
     'fees' => [
         'payin_percent' => (float) env('PLATFORM_PAYIN_FEE_PERCENT', 0),
         'payin_fixed' => (float) env('PLATFORM_PAYIN_FEE_FIXED', 0.50),
+        'payout_percent' => (float) env('PLATFORM_PAYOUT_FEE_PERCENT', 0),
         'payout_fixed' => (float) env('PLATFORM_PAYOUT_FEE_FIXED', 1.00),
     ],
 

@@ -4,11 +4,16 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Merchant;
+use App\Models\User;
 use App\Services\Ledger;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
 class MerchantController extends Controller
@@ -30,6 +35,41 @@ class MerchantController extends Controller
         return view('admin.merchants.index', compact('merchants', 'search'));
     }
 
+    public function create(): View
+    {
+        return view('admin.merchants.create');
+    }
+
+    /**
+     * Merchants can't sign up themselves: the admin opens their account,
+     * picks their fees, and hands them the login details.
+     */
+    public function store(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users'],
+            'password' => ['required', Password::min(8)],
+            'business_name' => ['required', 'string', 'max:120'],
+            'website' => ['nullable', 'url:http,https', 'max:255'],
+            'live_enabled' => ['boolean'],
+        ] + $this->feeRules());
+
+        $merchant = DB::transaction(function () use ($data, $request) {
+            $user = new User(Arr::only($data, ['name', 'email', 'password']));
+            // The admin vouches for the address, so no verification email is needed.
+            $user->forceFill(['role' => User::ROLE_MERCHANT, 'email_verified_at' => now()])->save();
+
+            return Merchant::create(Arr::only($data, ['business_name', 'website', ...array_keys($this->feeRules())]) + [
+                'user_id' => $user->id,
+                'live_enabled' => $request->boolean('live_enabled'),
+            ]);
+        });
+
+        return redirect()->route('admin.merchants.show', $merchant)
+            ->with('status', "Merchant created. Send {$data['email']} their password; they can change it in Settings.");
+    }
+
     public function show(Merchant $merchant): View
     {
         return view('admin.merchants.show', [
@@ -40,17 +80,53 @@ class MerchantController extends Controller
         ]);
     }
 
-    public function updateFees(Request $request, Merchant $merchant): RedirectResponse
+    /**
+     * Change a merchant's login name, email or password, or their business name.
+     */
+    public function updateAccount(Request $request, Merchant $merchant): RedirectResponse
     {
+        $user = $merchant->user;
+
         $data = $request->validate([
-            'fee_payin_percent' => ['nullable', 'numeric', 'min:0', 'max:50'],
-            'fee_payin_fixed' => ['nullable', 'numeric', 'min:0', 'max:1000'],
-            'fee_payout_fixed' => ['nullable', 'numeric', 'min:0', 'max:1000'],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'business_name' => ['required', 'string', 'max:120'],
+            'password' => ['nullable', Password::min(8)],
         ]);
 
-        $merchant->update($data);
+        $user->fill(Arr::only($data, ['name', 'email']));
+
+        if (filled($data['password'] ?? null)) {
+            $user->password = $data['password'];
+            $user->remember_token = Str::random(60); // log out "remember me" sessions
+        }
+
+        $user->save();
+        $merchant->update(['business_name' => $data['business_name']]);
+
+        return back()->with('status', filled($data['password'] ?? null) ? 'Login details saved, including the new password.' : 'Login details saved.');
+    }
+
+    public function updateFees(Request $request, Merchant $merchant): RedirectResponse
+    {
+        $merchant->update($request->validate($this->feeRules()));
 
         return back()->with('status', 'Fees saved. They apply to new payments and withdrawals.');
+    }
+
+    /**
+     * Per-merchant fee overrides; an empty field means "use the platform default".
+     *
+     * @return array<string, list<string>>
+     */
+    protected function feeRules(): array
+    {
+        return [
+            'fee_payin_percent' => ['nullable', 'numeric', 'min:0', 'max:50'],
+            'fee_payin_fixed' => ['nullable', 'numeric', 'min:0', 'max:1000'],
+            'fee_payout_percent' => ['nullable', 'numeric', 'min:0', 'max:50'],
+            'fee_payout_fixed' => ['nullable', 'numeric', 'min:0', 'max:1000'],
+        ];
     }
 
     public function toggleLive(Merchant $merchant): RedirectResponse

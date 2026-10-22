@@ -3,6 +3,10 @@
 @section('title', 'Merchants')
 @section('subtitle', 'Everyone using your gateway')
 
+@section('actions')
+    <a href="{{ route('admin.merchants.create') }}" class="btn"><x-icon name="plus" size="16" /> Add merchant</a>
+@endsection
+
 @section('content')
     <div class="card">
         <div class="card-head">
@@ -16,7 +20,7 @@
         </div>
 
         @if ($merchants->isEmpty())
-            <div class="empty"><x-icon name="users" size="34" /><strong>No merchants found</strong>Merchants sign up at <code>{{ route('register') }}</code></div>
+            <div class="empty"><x-icon name="users" size="34" /><strong>No merchants found</strong><a href="{{ route('admin.merchants.create') }}">Add your first merchant</a></div>
         @else
             <div class="table-wrap">
                 <table class="table">
