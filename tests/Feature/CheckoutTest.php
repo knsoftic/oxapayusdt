@@ -87,7 +87,27 @@ class CheckoutTest extends TestCase
             ->assertDontSee('api.qrserver.com')
             ->assertDontSee('bitcoin:bc1qexampleaddress')
             ->assertSee('Address only. Enter the amount yourself.')
-            ->assertSee('withdrawal fee comes on top');
+            ->assertSee('withdrawal fee comes on top')
+            ->assertSee('Paying from an exchange app')
+            ->assertSee('Assets → Withdraw', false);
+    }
+
+    public function test_exchange_guide_names_the_token_standard_of_the_network(): void
+    {
+        $merchant = Merchant::factory()->live()->create();
+        $payment = app(PaymentService::class)->create($merchant, 'live', ['amount' => '10']);
+        $payment->update([
+            'type' => 'white_label', 'track_id' => '7001', 'status' => 'waiting', 'pay_currency' => 'USDT', 'pay_amount' => '10',
+            'network' => 'Tron Network', 'address' => 'TQ7m2wYourTronAddressHere123456789', 'expires_at' => now()->addHour(),
+        ]);
+        $this->fakeLiveOxaPay();
+
+        $this->get(route('checkout.show', $payment))
+            ->assertOk()
+            ->assertSeeText('Send only USDT on Tron Network (TRC20).')
+            ->assertSeeText('Network: Tron Network (TRC20).')
+            ->assertSeeText('so that 10 USDT is received')
+            ->assertDontSee('Memo</strong> / <strong>Tag', false);
     }
 
     public function test_qr_codes_contain_only_the_plain_address(): void

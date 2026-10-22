@@ -230,6 +230,14 @@ body {
 .qr svg { width: 100%; height: 100%; display: block; shape-rendering: crispEdges; }
 .selectable { user-select: all; -webkit-user-select: all; }
 
+.howto { margin-top: 12px; border: 1px solid var(--border); border-radius: 13px; background: var(--surface-2); font-size: 13.5px; }
+.howto summary { display: flex; align-items: center; gap: 8px; padding: 12px 14px; font-weight: 600; cursor: pointer; list-style: none; }
+.howto summary::-webkit-details-marker { display: none; }
+.howto summary::after { content: ""; margin-left: auto; width: 8px; height: 8px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); transition: transform .15s; }
+.howto[open] summary::after { transform: rotate(-135deg); }
+.howto ol { margin: 0; padding: 0 16px 14px 34px; color: var(--text); line-height: 1.5; }
+.howto li + li { margin-top: 6px; }
+
 .kv { margin-bottom: 14px; }
 .kv:last-child { margin-bottom: 0; }
 .kv-label { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }

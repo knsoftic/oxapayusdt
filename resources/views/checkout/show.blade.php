@@ -10,6 +10,14 @@
     $waitingStep = $status === 'paying' ? 2 : 1;
     $backUrl = $payment->return_url;
     $retryUrl = $payment->paymentLink?->active ? $payment->paymentLink->url() : null;
+    // The token standard exchanges list next to the network name, e.g. TRC20 for Tron.
+    $standard = match ($payment->network) {
+        'Tron Network' => 'TRC20',
+        'Binance Smart Chain' => 'BEP20',
+        'Ethereum Network' => 'ERC20',
+        default => null,
+    };
+    $networkLabel = $payment->network.($standard ? " ({$standard})" : '');
 @endphp
 
 @section('content')
@@ -156,7 +164,7 @@
 
                 <div class="note">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
-                    <span>Send only <strong>{{ $payment->pay_currency }}</strong> on <strong>{{ $payment->network }}</strong>. In your exchange or wallet, pick the same network. Other coins, other networks, or payments after the timer ends can be lost.</span>
+                    <span>Send only <strong>{{ $payment->pay_currency }}</strong> on <strong>{{ $networkLabel }}</strong>. In your exchange or wallet, pick the same network. Other coins, other networks, or payments after the timer ends can be lost.</span>
                 </div>
                 <div class="note">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
@@ -168,6 +176,21 @@
                         <span>Include the memo / tag above, or the payment can't be matched to your order.</span>
                     </div>
                 @endif
+
+                <details class="howto">
+                    <summary>Paying from an exchange app (Binance, Bitget, OKX, Bybit)?</summary>
+                    <ol>
+                        <li>Open <strong>Assets → Withdraw</strong>. Don't use the scan button on the app's home screen: it only reads the exchange's own login codes.</li>
+                        <li>Choose <strong>{{ $payment->pay_currency }}</strong>, then <strong>On-chain</strong> withdrawal (not an internal transfer).</li>
+                        <li>Network: <strong>{{ $networkLabel }}</strong>.</li>
+                        <li>In the <strong>address</strong> field, tap its own scan icon and scan the QR above, or paste the address you copied.</li>
+                        @if ($payment->memo)
+                            <li>Paste the memo into the <strong>Memo</strong> / <strong>Tag</strong> field.</li>
+                        @endif
+                        <li>Enter the amount so that <strong>{{ $payment->pay_amount }} {{ $payment->pay_currency }}</strong> is received. The exchange's fee is extra.</li>
+                        <li>Confirm the withdrawal. This page updates by itself when the payment arrives.</li>
+                    </ol>
+                </details>
             @endif
 
             <div class="steps" aria-hidden="true">
