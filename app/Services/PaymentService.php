@@ -11,6 +11,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class PaymentService
 {
@@ -28,6 +29,8 @@ class PaymentService
      */
     public function create(Merchant $merchant, string $mode, array $data): Payment
     {
+        $this->assertWithinLimits($merchant, $data['amount']);
+
         $amount = Money::format(Money::cents($data['amount']));
         $fee = $merchant->payinFeeFor($amount);
 
@@ -50,6 +53,26 @@ class PaymentService
             'idempotency_key' => $data['idempotency_key'] ?? null,
             'expires_at' => now()->addMinutes(config('oxapay.lifetime')),
         ]);
+    }
+
+    /**
+     * Every payment (API, payment link, checkout) must fit the merchant's
+     * minimum and maximum, set by the admin per merchant or as a default.
+     *
+     * @throws ValidationException
+     */
+    public function assertWithinLimits(Merchant $merchant, int|float|string $amount): void
+    {
+        $cents = Money::cents($amount);
+        $max = $merchant->payinMax();
+
+        if ($cents < Money::cents($merchant->payinMin())) {
+            throw ValidationException::withMessages(['amount' => 'The minimum payment is '.Money::usd($merchant->payinMin()).'.']);
+        }
+
+        if ($max !== null && $cents > Money::cents($max)) {
+            throw ValidationException::withMessages(['amount' => 'The maximum payment is '.Money::usd($max).'.']);
+        }
     }
 
     /**

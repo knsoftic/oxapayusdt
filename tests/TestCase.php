@@ -27,7 +27,9 @@ abstract class TestCase extends BaseTestCase
             'platform.fees.payout_percent' => 0.0,
             'platform.fees.payout_fixed' => 1.00,
             'platform.min_payment' => 1.0,
+            'platform.max_payment' => null,
             'platform.min_payout' => 5.0,
+            'platform.max_payout' => null,
             'platform.auto_convert_usdt' => true,
         ]);
     }

@@ -59,13 +59,13 @@
                     </div>
                     <div class="field">
                         <label for="amount">Amount (USD)</label>
-                        <input class="input" id="amount" name="amount" type="number" step="0.01" min="{{ config('platform.min_payment') }}" value="{{ old('amount') }}" placeholder="Leave empty to let the customer choose">
+                        <input class="input" id="amount" name="amount" type="number" step="0.01" min="{{ $merchant->payinMin() }}" @if ($merchant->payinMax()) max="{{ $merchant->payinMax() }}" @endif value="{{ old('amount') }}" placeholder="Leave empty to let the customer choose">
                     </div>
                     <div class="field">
                         <label for="description">Description <span class="muted">(optional)</span></label>
                         <input class="input" id="description" name="description" value="{{ old('description') }}" maxlength="255">
                     </div>
-                    <p class="small muted mt-0">Fee per payment: {{ $merchant->payinFeeLabel() }}. The rest goes to your balance.</p>
+                    <p class="small muted mt-0">Allowed amount per payment: {{ $merchant->payinLimitLabel() }}. Fee per payment: {{ $merchant->payinFeeLabel() }}; the rest goes to your balance.</p>
                     <button type="submit" class="btn"><x-icon name="plus" size="15" /> Create link</button>
                 </form>
             </div>

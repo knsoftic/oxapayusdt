@@ -35,9 +35,23 @@ return [
         'payout_fixed' => (float) env('PLATFORM_PAYOUT_FEE_FIXED', 1.00),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Amount Limits (USD)
+    |--------------------------------------------------------------------------
+    |
+    | Default smallest / largest payment and withdrawal for every merchant;
+    | each merchant can get its own limits. A null maximum means no limit.
+    |
+    */
+
     'min_payment' => (float) env('PLATFORM_MIN_PAYMENT', 1.00),
 
+    'max_payment' => is_numeric($maxPayment = env('PLATFORM_MAX_PAYMENT')) ? (float) $maxPayment : null,
+
     'min_payout' => (float) env('PLATFORM_MIN_PAYOUT', 5.00),
+
+    'max_payout' => is_numeric($maxPayout = env('PLATFORM_MAX_PAYOUT')) ? (float) $maxPayout : null,
 
     /*
     |--------------------------------------------------------------------------

@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class MerchantController extends Controller
@@ -53,14 +54,16 @@ class MerchantController extends Controller
             'business_name' => ['required', 'string', 'max:120'],
             'website' => ['nullable', 'url:http,https', 'max:255'],
             'live_enabled' => ['boolean'],
-        ] + $this->feeRules());
+        ] + $this->feeRules() + $this->limitRules());
+
+        $this->assertLimitsFit(new Merchant, $data);
 
         $merchant = DB::transaction(function () use ($data, $request) {
             $user = new User(Arr::only($data, ['name', 'email', 'password']));
             // The admin vouches for the address, so no verification email is needed.
             $user->forceFill(['role' => User::ROLE_MERCHANT, 'email_verified_at' => now()])->save();
 
-            return Merchant::create(Arr::only($data, ['business_name', 'website', ...array_keys($this->feeRules())]) + [
+            return Merchant::create(Arr::only($data, ['business_name', 'website', ...array_keys($this->feeRules() + $this->limitRules())]) + [
                 'user_id' => $user->id,
                 'live_enabled' => $request->boolean('live_enabled'),
             ]);
@@ -107,11 +110,51 @@ class MerchantController extends Controller
         return back()->with('status', filled($data['password'] ?? null) ? 'Login details saved, including the new password.' : 'Login details saved.');
     }
 
+    /**
+     * Fees and amount limits for one merchant.
+     */
     public function updateFees(Request $request, Merchant $merchant): RedirectResponse
     {
-        $merchant->update($request->validate($this->feeRules()));
+        $data = $request->validate($this->feeRules() + $this->limitRules());
 
-        return back()->with('status', 'Fees saved. They apply to new payments and withdrawals.');
+        $this->assertLimitsFit($merchant, $data);
+        $merchant->update($data);
+
+        return back()->with('status', 'Fees and limits saved. They apply to new payments and withdrawals.');
+    }
+
+    /**
+     * Per-merchant amount limits in USD; an empty field means "use the platform default".
+     *
+     * @return array<string, list<string>>
+     */
+    protected function limitRules(): array
+    {
+        return [
+            'limit_payin_min' => ['nullable', 'numeric', 'min:0.5', 'max:1000000'],
+            'limit_payin_max' => ['nullable', 'numeric', 'min:0.5', 'max:1000000'],
+            'limit_payout_min' => ['nullable', 'numeric', 'min:1', 'max:1000000'],
+            'limit_payout_max' => ['nullable', 'numeric', 'min:1', 'max:1000000'],
+        ];
+    }
+
+    /**
+     * The effective minimum (override or default) must not be above the effective maximum,
+     * or the merchant could never take a payment or withdraw.
+     *
+     * @throws ValidationException
+     */
+    protected function assertLimitsFit(Merchant $merchant, array $data): void
+    {
+        $probe = (clone $merchant)->fill(Arr::only($data, array_keys($this->limitRules())));
+
+        if ($probe->payinMax() !== null && $probe->payinMin() > $probe->payinMax()) {
+            throw ValidationException::withMessages(['limit_payin_max' => 'The maximum payment ('.Money::usd($probe->payinMax()).') is below the minimum ('.Money::usd($probe->payinMin()).').']);
+        }
+
+        if ($probe->payoutMax() !== null && $probe->payoutMin() > $probe->payoutMax()) {
+            throw ValidationException::withMessages(['limit_payout_max' => 'The maximum withdrawal ('.Money::usd($probe->payoutMax()).') is below the minimum ('.Money::usd($probe->payoutMin()).').']);
+        }
     }
 
     /**

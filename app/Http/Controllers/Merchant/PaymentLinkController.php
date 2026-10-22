@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Merchant;
 
 use App\Models\PaymentLink;
+use App\Services\PaymentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -23,13 +24,18 @@ class PaymentLinkController extends MerchantController
         return view('merchant.links.index', compact('links'));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, PaymentService $payments): RedirectResponse
     {
         $data = $request->validate([
             'title' => ['required', 'string', 'max:120'],
             'description' => ['nullable', 'string', 'max:255'],
-            'amount' => ['nullable', 'numeric', 'min:'.config('platform.min_payment'), 'max:1000000'],
+            'amount' => ['nullable', 'numeric', 'min:0.01', 'max:1000000'],
         ]);
+
+        // A fixed amount must fit this merchant's payment limits.
+        if (isset($data['amount'])) {
+            $payments->assertWithinLimits($this->merchant(), $data['amount']);
+        }
 
         PaymentLink::create($data + [
             'merchant_id' => $this->merchant()->id,

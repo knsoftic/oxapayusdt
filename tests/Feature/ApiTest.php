@@ -84,7 +84,7 @@ class ApiTest extends TestCase
     {
         [, $key] = $this->merchantWithKey();
 
-        $this->withToken($key)->postJson('/api/v1/payments', ['amount' => '0.10', 'currency' => 'EUR', 'customer_email' => 'nope'])
+        $this->withToken($key)->postJson('/api/v1/payments', ['amount' => '0', 'currency' => 'EUR', 'customer_email' => 'nope'])
             ->assertStatus(422)
             ->assertJsonPath('error.type', 'invalid_request')
             ->assertJsonStructure(['error' => ['message', 'fields' => ['amount', 'currency', 'customer_email']]]);

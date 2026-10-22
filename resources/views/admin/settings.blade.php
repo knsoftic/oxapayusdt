@@ -63,21 +63,47 @@
                         </div>
                     </div>
                     <p class="small muted mt-0">Fee = amount × % + fixed. Example with these defaults: a {{ usd(100) }} payment pays {{ usd(\App\Models\Merchant::feeFor(100, config('platform.fees.payin_percent'), config('platform.fees.payin_fixed'))) }}, a {{ usd(100) }} withdrawal pays {{ usd(\App\Models\Merchant::feeFor(100, config('platform.fees.payout_percent'), config('platform.fees.payout_fixed'))) }}.</p>
-                    <div class="form-row">
-                        <div class="field">
-                            <label for="min_payment">Minimum payment $</label>
-                            <input class="input" id="min_payment" name="min_payment" type="number" step="0.01" min="0.5" value="{{ old('min_payment', config('platform.min_payment')) }}" required>
-                        </div>
-                        <div class="field">
-                            <label for="min_payout">Minimum withdrawal $</label>
-                            <input class="input" id="min_payout" name="min_payout" type="number" step="0.01" min="1" value="{{ old('min_payout', config('platform.min_payout')) }}" required>
-                        </div>
-                    </div>
                     <input type="hidden" name="auto_convert_usdt" value="0">
                     <label class="check">
                         <input type="checkbox" name="auto_convert_usdt" value="1" @checked(old('auto_convert_usdt', config('platform.auto_convert_usdt')))>
                         <span>Convert received crypto to USDT automatically <span class="muted small">(recommended: protects merchant balances from price swings)</span></span>
                     </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-2">
+            <div class="card">
+                <div class="card-head"><h2>Payment limits</h2><span class="sub">per payment, USD</span></div>
+                <div class="card-body form">
+                    <div class="form-row">
+                        <div class="field">
+                            <label for="min_payment">Minimum $</label>
+                            <input class="input" id="min_payment" name="min_payment" type="number" step="0.01" min="0.5" value="{{ old('min_payment', config('platform.min_payment')) }}" required>
+                        </div>
+                        <div class="field">
+                            <label for="max_payment">Maximum $</label>
+                            <input class="input" id="max_payment" name="max_payment" type="number" step="0.01" min="0.5" value="{{ old('max_payment', config('platform.max_payment')) }}" placeholder="No limit">
+                        </div>
+                    </div>
+                    <p class="small muted mt-0">Default for every merchant: {{ \App\Models\Merchant::limitLabel((float) config('platform.min_payment'), is_numeric(config('platform.max_payment')) ? (float) config('platform.max_payment') : null) }}. Leave the maximum empty for no limit. Each merchant can get their own limits.</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><h2>Withdrawal limits</h2><span class="sub">per withdrawal, USD</span></div>
+                <div class="card-body form">
+                    <div class="form-row">
+                        <div class="field">
+                            <label for="min_payout">Minimum $</label>
+                            <input class="input" id="min_payout" name="min_payout" type="number" step="0.01" min="1" value="{{ old('min_payout', config('platform.min_payout')) }}" required>
+                        </div>
+                        <div class="field">
+                            <label for="max_payout">Maximum $</label>
+                            <input class="input" id="max_payout" name="max_payout" type="number" step="0.01" min="1" value="{{ old('max_payout', config('platform.max_payout')) }}" placeholder="No limit">
+                        </div>
+                    </div>
+                    <p class="small muted mt-0">Default for every merchant: {{ \App\Models\Merchant::limitLabel((float) config('platform.min_payout'), is_numeric(config('platform.max_payout')) ? (float) config('platform.max_payout') : null) }}. Leave the maximum empty for no limit.</p>
                 </div>
             </div>
         </div>

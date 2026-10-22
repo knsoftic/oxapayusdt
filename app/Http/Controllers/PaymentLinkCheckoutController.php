@@ -26,7 +26,7 @@ class PaymentLinkCheckoutController extends Controller
         $this->ensureUsable($link);
 
         $data = $request->validate([
-            'amount' => $link->amount ? ['prohibited'] : ['required', 'numeric', 'min:'.config('platform.min_payment'), 'max:1000000'],
+            'amount' => $link->amount ? ['prohibited'] : ['required', 'numeric', 'min:0.01', 'max:1000000'],
             'customer_email' => ['nullable', 'email', 'max:255'],
         ]);
 

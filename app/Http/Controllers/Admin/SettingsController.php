@@ -38,12 +38,16 @@ class SettingsController extends Controller
             'payin_fixed' => ['required', 'numeric', 'min:0', 'max:1000'],
             'payout_percent' => ['required', 'numeric', 'min:0', 'max:50'],
             'payout_fixed' => ['required', 'numeric', 'min:0', 'max:1000'],
-            'min_payment' => ['required', 'numeric', 'min:0.5', 'max:100000'],
-            'min_payout' => ['required', 'numeric', 'min:1', 'max:100000'],
+            'min_payment' => ['required', 'numeric', 'min:0.5', 'max:1000000'],
+            'max_payment' => ['nullable', 'numeric', 'gte:min_payment', 'max:1000000'],
+            'min_payout' => ['required', 'numeric', 'min:1', 'max:1000000'],
+            'max_payout' => ['nullable', 'numeric', 'gte:min_payout', 'max:1000000'],
             'auto_convert_usdt' => ['boolean'],
         ], [
             'callback_url.url' => 'The webhook URL must be a public https:// address.',
             'brand_color.regex' => 'The brand colour must look like #4f46e5.',
+            'max_payment.gte' => 'The maximum payment must be at least the minimum payment.',
+            'max_payout.gte' => 'The maximum withdrawal must be at least the minimum withdrawal.',
         ]);
 
         // A blank key field keeps the saved key, so saved keys never have to be sent back to the browser.
@@ -63,6 +67,9 @@ class SettingsController extends Controller
         Setting::put('platform.fees.payout_fixed', (float) $data['payout_fixed']);
         Setting::put('platform.min_payment', (float) $data['min_payment']);
         Setting::put('platform.min_payout', (float) $data['min_payout']);
+        // An empty maximum means "no limit".
+        Setting::put('platform.max_payment', isset($data['max_payment']) ? (float) $data['max_payment'] : null);
+        Setting::put('platform.max_payout', isset($data['max_payout']) ? (float) $data['max_payout'] : null);
         Setting::put('platform.auto_convert_usdt', $request->boolean('auto_convert_usdt'));
 
         return redirect()->route('admin.settings.edit')->with('status', 'Settings saved.');

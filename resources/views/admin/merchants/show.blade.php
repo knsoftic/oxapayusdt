@@ -31,13 +31,16 @@
 
     <div class="grid grid-2">
         <div class="card">
-            <div class="card-head"><h2>Fees for this merchant</h2></div>
+            <div class="card-head"><h2>Fees and limits for this merchant</h2></div>
             <div class="card-body">
                 <form method="POST" action="{{ route('admin.merchants.fees', $merchant) }}" class="form">
                     @csrf
                     @method('PUT')
+                    <div class="field" style="margin:0"><span class="label">Fees</span></div>
                     @include('admin.merchants._fee_fields', ['merchant' => $merchant])
-                    <div><button type="submit" class="btn">Save fees</button></div>
+                    <div class="field" style="margin:0"><span class="label">Amount limits</span></div>
+                    @include('admin.merchants._limit_fields', ['merchant' => $merchant])
+                    <div><button type="submit" class="btn">Save fees and limits</button></div>
                 </form>
             </div>
         </div>

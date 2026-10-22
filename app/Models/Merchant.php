@@ -31,6 +31,10 @@ class Merchant extends Model
         'fee_payin_fixed',
         'fee_payout_percent',
         'fee_payout_fixed',
+        'limit_payin_min',
+        'limit_payin_max',
+        'limit_payout_min',
+        'limit_payout_max',
         'webhook_url',
         'webhook_secret',
     ];
@@ -46,6 +50,10 @@ class Merchant extends Model
             'fee_payin_fixed' => 'decimal:2',
             'fee_payout_percent' => 'decimal:2',
             'fee_payout_fixed' => 'decimal:2',
+            'limit_payin_min' => 'decimal:2',
+            'limit_payin_max' => 'decimal:2',
+            'limit_payout_min' => 'decimal:2',
+            'limit_payout_max' => 'decimal:2',
             'live_balance' => 'decimal:2',
             'test_balance' => 'decimal:2',
             'webhook_secret' => 'encrypted',
@@ -156,6 +164,55 @@ class Merchant extends Model
     public function payoutFeeLabel(): string
     {
         return self::feeLabel($this->payoutFeePercent(), $this->payoutFeeFixed());
+    }
+
+    /**
+     * Smallest / largest payment this merchant may take, in USD (null max = no limit).
+     */
+    public function payinMin(): float
+    {
+        return (float) ($this->limit_payin_min ?? config('platform.min_payment'));
+    }
+
+    public function payinMax(): ?float
+    {
+        return self::optionalAmount($this->limit_payin_max ?? config('platform.max_payment'));
+    }
+
+    /**
+     * Smallest / largest withdrawal this merchant may request, in USD (null max = no limit).
+     */
+    public function payoutMin(): float
+    {
+        return (float) ($this->limit_payout_min ?? config('platform.min_payout'));
+    }
+
+    public function payoutMax(): ?float
+    {
+        return self::optionalAmount($this->limit_payout_max ?? config('platform.max_payout'));
+    }
+
+    public function payinLimitLabel(): string
+    {
+        return self::limitLabel($this->payinMin(), $this->payinMax());
+    }
+
+    public function payoutLimitLabel(): string
+    {
+        return self::limitLabel($this->payoutMin(), $this->payoutMax());
+    }
+
+    /**
+     * "$1.00 – $5,000.00", or "$1.00 or more" when there is no maximum.
+     */
+    public static function limitLabel(float $min, ?float $max): string
+    {
+        return $max === null ? Money::usd($min).' or more' : Money::usd($min).' – '.Money::usd($max);
+    }
+
+    protected static function optionalAmount(mixed $value): ?float
+    {
+        return is_numeric($value) ? (float) $value : null;
     }
 
     public static function feeFor(int|float|string $amount, float $percent, float $fixed): string

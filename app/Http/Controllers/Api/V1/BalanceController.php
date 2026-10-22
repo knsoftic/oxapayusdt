@@ -34,6 +34,13 @@ class BalanceController extends Controller
                 'payout_percent' => number_format($merchant->payoutFeePercent(), 2, '.', ''),
                 'payout_fixed' => number_format($merchant->payoutFeeFixed(), 2, '.', ''),
             ],
+            // null maximum = no limit.
+            'limits' => [
+                'payment_min' => Money::format(Money::cents($merchant->payinMin())),
+                'payment_max' => $merchant->payinMax() === null ? null : Money::format(Money::cents($merchant->payinMax())),
+                'payout_min' => Money::format(Money::cents($merchant->payoutMin())),
+                'payout_max' => $merchant->payoutMax() === null ? null : Money::format(Money::cents($merchant->payoutMax())),
+            ],
         ]);
     }
 }

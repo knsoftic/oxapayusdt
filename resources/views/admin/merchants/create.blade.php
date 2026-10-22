@@ -50,10 +50,19 @@
             </div>
         </div>
 
-        <div class="card">
-            <div class="card-head"><h2>Fees for this merchant</h2></div>
-            <div class="card-body form">
-                @include('admin.merchants._fee_fields', ['merchant' => null])
+        <div class="grid grid-2">
+            <div class="card">
+                <div class="card-head"><h2>Fees for this merchant</h2></div>
+                <div class="card-body form">
+                    @include('admin.merchants._fee_fields', ['merchant' => null])
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><h2>Amount limits</h2></div>
+                <div class="card-body form">
+                    @include('admin.merchants._limit_fields', ['merchant' => null])
+                </div>
             </div>
         </div>
 

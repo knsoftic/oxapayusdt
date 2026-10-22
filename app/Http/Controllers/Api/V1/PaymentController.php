@@ -28,7 +28,8 @@ class PaymentController extends Controller
         $mode = $request->attributes->get('mode');
 
         $data = $request->validate([
-            'amount' => ['required', 'numeric', 'min:'.config('platform.min_payment'), 'max:1000000'],
+            // The merchant's own minimum and maximum are checked when the payment is created.
+            'amount' => ['required', 'numeric', 'min:0.01', 'max:1000000'],
             'currency' => ['sometimes', 'string', Rule::in(['USD', 'usd'])],
             'reference' => ['nullable', 'string', 'max:100'],
             'description' => ['nullable', 'string', 'max:255'],

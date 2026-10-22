@@ -33,10 +33,15 @@ class PayoutService
     {
         $amount = Money::cents($data['amount']);
         $fee = Money::cents($merchant->payoutFeeFor(Money::format($amount)));
-        $minimum = Money::cents(config('platform.min_payout'));
+        $maximum = $merchant->payoutMax();
 
-        if ($amount < $minimum) {
-            throw ValidationException::withMessages(['amount' => 'The minimum withdrawal is '.Money::usd($minimum / 100).'.']);
+        // Limits set by the admin for this merchant, or the platform defaults.
+        if ($amount < Money::cents($merchant->payoutMin())) {
+            throw ValidationException::withMessages(['amount' => 'The minimum withdrawal is '.Money::usd($merchant->payoutMin()).'.']);
+        }
+
+        if ($maximum !== null && $amount > Money::cents($maximum)) {
+            throw ValidationException::withMessages(['amount' => 'The maximum withdrawal is '.Money::usd($maximum).'.']);
         }
 
         if ($amount <= $fee) {

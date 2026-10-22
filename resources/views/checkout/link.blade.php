@@ -31,7 +31,7 @@
             <div class="field">
                 <label for="amount">Amount (USD)</label>
                 <div class="amount-row">
-                    <input class="input" id="amount" type="number" name="amount" step="0.01" min="{{ config('platform.min_payment') }}" value="{{ old('amount') }}" required autofocus>
+                    <input class="input" id="amount" type="number" name="amount" step="0.01" min="{{ $merchant->payinMin() }}" @if ($merchant->payinMax()) max="{{ $merchant->payinMax() }}" @endif value="{{ old('amount') }}" required autofocus>
                     <input class="input" type="text" value="USD" disabled aria-label="Currency">
                 </div>
             </div>

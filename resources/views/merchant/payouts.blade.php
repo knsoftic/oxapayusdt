@@ -55,7 +55,7 @@
                     <x-icon name="wallet" />
                     <div>
                         <p><strong>{{ usd($balance) }}</strong> available</p>
-                        <p class="small">Fee {{ $merchant->payoutFeeLabel() }} per withdrawal · minimum {{ usd(config('platform.min_payout')) }}</p>
+                        <p class="small">Fee {{ $merchant->payoutFeeLabel() }} per withdrawal · allowed {{ $merchant->payoutLimitLabel() }}</p>
                     </div>
                 </div>
 

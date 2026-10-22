@@ -38,7 +38,7 @@
             <a href="#quick-start">Quick start</a>
             <a href="#authentication">Authentication</a>
             <a href="#test-mode">Test mode</a>
-            <a href="#fees">Fees and balance</a>
+            <a href="#fees">Fees, limits, balance</a>
             <div class="nav-label">Payments</div>
             <a href="#create-payment">Create a payment</a>
             <a href="#retrieve-payment">Retrieve a payment</a>
@@ -107,7 +107,7 @@
             </section>
 
             <section id="fees">
-                <h2>Fees and balance</h2>
+                <h2>Fees, limits and balance</h2>
                 <p>Each payment has a pay-in fee (default: {{ rtrim(rtrim(number_format(config('platform.fees.payin_percent'), 2), '0'), '.') }}% + {{ usd(config('platform.fees.payin_fixed')) }}). It is fixed when the payment is created and returned as <code>fee</code> and <code>net_amount</code>. When the payment is paid, the <code>net_amount</code> is added to your balance.</p>
                 <p>Each withdrawal has a payout fee (default {{ \App\Models\Merchant::feeLabel(config('platform.fees.payout_percent'), config('platform.fees.payout_fixed')) }}), taken from the withdrawal amount. Both fees are a percentage plus a fixed amount; <code>GET /balance</code> returns the exact fees for your account.</p>
                 <table class="params">
@@ -115,14 +115,19 @@
                     <tr><td>Pay-in fee</td><td>− {{ usd(config('platform.fees.payin_fixed') + 10 * config('platform.fees.payin_percent') / 100) }}</td></tr>
                     <tr><td><strong>Added to your balance</strong></td><td><strong>{{ usd(10 - config('platform.fees.payin_fixed') - 10 * config('platform.fees.payin_percent') / 100) }}</strong></td></tr>
                 </table>
-                <p class="small muted">Your own fees may differ; the dashboard always shows the fees for your account.</p>
+                <p><strong>Amount limits.</strong> Every account has a minimum and maximum amount per payment and per withdrawal. A payment or withdrawal outside them is refused with <code>422 invalid_request</code> and a message on the <code>amount</code> field, such as <code>"The maximum payment is $5,000.00."</code></p>
+                <table class="params">
+                    <tr><td>Payment amount (default)</td><td>{{ \App\Models\Merchant::limitLabel((float) config('platform.min_payment'), is_numeric(config('platform.max_payment')) ? (float) config('platform.max_payment') : null) }}</td></tr>
+                    <tr><td>Withdrawal amount (default)</td><td>{{ \App\Models\Merchant::limitLabel((float) config('platform.min_payout'), is_numeric(config('platform.max_payout')) ? (float) config('platform.max_payout') : null) }}</td></tr>
+                </table>
+                <p class="small muted">Your own fees and limits may differ. <code>GET /balance</code> returns them under <code>fees</code> and <code>limits</code>, and the dashboard shows them under Settings.</p>
             </section>
 
             <section id="create-payment">
                 <h2>Create a payment</h2>
                 <p><span class="endpoint"><span class="method post">POST</span> /payments</span></p>
                 <table class="params">
-                    <tr><td><code>amount</code> <span class="req">required</span><span class="type">string or number</span></td><td>Amount in USD, e.g. <code>"25.00"</code>. Minimum {{ usd(config('platform.min_payment')) }}.</td></tr>
+                    <tr><td><code>amount</code> <span class="req">required</span><span class="type">string or number</span></td><td>Amount in USD, e.g. <code>"25.00"</code>. Must be within your <a href="#fees">payment limits</a> (default {{ \App\Models\Merchant::limitLabel((float) config('platform.min_payment'), is_numeric(config('platform.max_payment')) ? (float) config('platform.max_payment') : null) }}).</td></tr>
                     <tr><td><code>currency</code><span class="type">string</span></td><td>Only <code>USD</code> for now. The customer still pays in crypto.</td></tr>
                     <tr><td><code>reference</code><span class="type">string, max 100</span></td><td>Your own order ID. Returned in webhooks and searchable.</td></tr>
                     <tr><td><code>description</code><span class="type">string, max 255</span></td><td>Shown to the customer on the checkout.</td></tr>
@@ -201,8 +206,17 @@
     "payin_fixed": "0.50",
     "payout_percent": "0.00",
     "payout_fixed": "1.00"
+  },
+  "limits": {
+    "payment_min": "1.00",
+    "payment_max": "5000.00",
+    "payout_min": "5.00",
+    "payout_max": null
   }
 }</pre>
+                @endverbatim
+                <p><code>limits</code> are in USD; a <code>null</code> maximum means there is no upper limit.</p>
+                @verbatim
                 @endverbatim
             </section>
 
@@ -211,7 +225,7 @@
                 <p>Withdraw your balance to your own wallet in <strong>{{ config('platform.payout_currency') }}</strong>. The amount (including the payout fee) leaves your balance right away. Live payouts are reviewed and then sent; if one is rejected or fails, the full amount returns to your balance.</p>
                 <p><span class="endpoint"><span class="method post">POST</span> /payouts</span></p>
                 <table class="params">
-                    <tr><td><code>amount</code> <span class="req">required</span><span class="type">number, USD</span></td><td>Taken from your balance. You receive <code>amount − fee</code> {{ config('platform.payout_currency') }}. Minimum {{ usd(config('platform.min_payout')) }}.</td></tr>
+                    <tr><td><code>amount</code> <span class="req">required</span><span class="type">number, USD</span></td><td>Taken from your balance. You receive <code>amount − fee</code> {{ config('platform.payout_currency') }}. Must be within your <a href="#fees">withdrawal limits</a> (default {{ \App\Models\Merchant::limitLabel((float) config('platform.min_payout'), is_numeric(config('platform.max_payout')) ? (float) config('platform.max_payout') : null) }}).</td></tr>
                     <tr><td><code>network</code> <span class="req">required</span><span class="type">string</span></td><td>One of: @foreach ($networks as $value => $label)<code>{{ $value }}</code> ({{ $label }})@if (! $loop->last), @endif @endforeach</td></tr>
                     <tr><td><code>address</code> <span class="req">required</span><span class="type">string</span></td><td>Your wallet address on that network. It is format-checked.</td></tr>
                     <tr><td><code>memo</code><span class="type">string</span></td><td>Memo / tag, only if your wallet needs one.</td></tr>
@@ -366,7 +380,7 @@ def webhook():
                     <tr><td><code>403</code> account_suspended</td><td>The merchant account is suspended.</td></tr>
                     <tr><td><code>403</code> live_mode_disabled</td><td>A live key was used before live activation.</td></tr>
                     <tr><td><code>404</code> not_found</td><td>No such payment or payout in this mode.</td></tr>
-                    <tr><td><code>422</code> invalid_request</td><td>A field is missing or wrong; see <code>fields</code>. Also returned for insufficient balance on payouts.</td></tr>
+                    <tr><td><code>422</code> invalid_request</td><td>A field is missing or wrong; see <code>fields</code>. Also returned for an amount outside your limits, and for insufficient balance on payouts.</td></tr>
                     <tr><td><code>429</code> rate_limited</td><td>More than 120 requests per minute with one key.</td></tr>
                     <tr><td><code>502</code> gateway_error</td><td>The payment network had a problem. Safe to retry.</td></tr>
                 </table>

@@ -60,11 +60,13 @@
             </div>
 
             <div class="card">
-                <div class="card-head"><h2>Your fees</h2></div>
+                <div class="card-head"><h2>Your fees and limits</h2></div>
                 <div class="card-body">
                     <dl class="dl">
                         <dt>Per payment</dt><dd>{{ $merchant->payinFeeLabel() }}</dd>
                         <dt>Per withdrawal</dt><dd>{{ $merchant->payoutFeeLabel() }}</dd>
+                        <dt>Payment amount</dt><dd>{{ $merchant->payinLimitLabel() }}</dd>
+                        <dt>Withdrawal amount</dt><dd>{{ $merchant->payoutLimitLabel() }}</dd>
                         <dt>Example</dt><dd>A {{ usd(10) }} payment adds {{ usd(10 - (float) $merchant->payinFeeFor(10)) }} to your balance</dd>
                     </dl>
                 </div>
