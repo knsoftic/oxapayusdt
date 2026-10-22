@@ -1,0 +1,77 @@
+{
+  "info": {
+    "name": "Payments API v1",
+    "description": "Merchant API: create payments, check balance, request payouts. Set the baseUrl and apiKey collection variables first (Developers page in your dashboard).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{apiKey}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8001/api/v1" },
+    { "key": "apiKey", "value": "sk_test_REPLACE_ME" },
+    { "key": "paymentId", "value": "" },
+    { "key": "payoutId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Create payment",
+      "event": [{
+        "listen": "test",
+        "script": { "exec": ["const body = pm.response.json();", "if (body.id) pm.collectionVariables.set('paymentId', body.id);"], "type": "text/javascript" }
+      }],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Idempotency-Key", "value": "{{$guid}}" }
+        ],
+        "url": "{{baseUrl}}/payments",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"amount\": \"25.00\",\n  \"reference\": \"order_1001\",\n  \"description\": \"2x T-shirt\",\n  \"customer_email\": \"buyer@example.com\",\n  \"return_url\": \"https://example.com/thank-you\",\n  \"metadata\": { \"cart_id\": \"c_42\" }\n}"
+        }
+      }
+    },
+    {
+      "name": "Retrieve payment",
+      "request": { "method": "GET", "url": "{{baseUrl}}/payments/{{paymentId}}" }
+    },
+    {
+      "name": "List payments",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "{{baseUrl}}/payments?limit=20", "host": ["{{baseUrl}}"], "path": ["payments"], "query": [{ "key": "limit", "value": "20" }, { "key": "status", "value": "paid", "disabled": true }] }
+      }
+    },
+    {
+      "name": "Balance",
+      "request": { "method": "GET", "url": "{{baseUrl}}/balance" }
+    },
+    {
+      "name": "Create payout",
+      "event": [{
+        "listen": "test",
+        "script": { "exec": ["const body = pm.response.json();", "if (body.id) pm.collectionVariables.set('payoutId', body.id);"], "type": "text/javascript" }
+      }],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Idempotency-Key", "value": "{{$guid}}" }
+        ],
+        "url": "{{baseUrl}}/payouts",
+        "body": { "mode": "raw", "raw": "{\n  \"amount\": \"10.00\",\n  \"network\": \"Tron\",\n  \"address\": \"TQ7m2wYourTronAddressHere123456789\"\n}" }
+      }
+    },
+    {
+      "name": "Retrieve payout",
+      "request": { "method": "GET", "url": "{{baseUrl}}/payouts/{{payoutId}}" }
+    },
+    {
+      "name": "List payouts",
+      "request": { "method": "GET", "url": "{{baseUrl}}/payouts" }
+    }
+  ]
+}
